@@ -2,16 +2,15 @@ const TelegramBot = require("node-telegram-bot-api");
 const { Wit } = require("node-wit");
 const express = require("express");
 const bodyParser = require("body-parser");
+require("dotenv").config();
 
 const app = express();
 const port = 3000;
-
-const token =
-  process.env.TOKEN || "7162726619:AAFQiddZOWqbO7Wpnos9vLYyTQ2P0rNmcwM";
+const token = process.env.TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 
 const witClient = new Wit({
-  accessToken: process.env.WIT_TOKEN || "G4MP7RBM7IEDJQFM3PUGKF5X3XMTSQC6",
+  accessToken: process.env.WIT_TOKEN,
 });
 
 const restaurantsData = [
