@@ -113,13 +113,16 @@ bot.on("message", async (msg) => {
     const startCity = startCityEntity[0].value;
     const endCity = endCityEntity[0].value;
 
-    const response = await fetch("http://localhost:3000/handle-message", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(witResponse),
-    });
+    const response = await fetch(
+      "https://bot-server-a9nf.onrender.com/handle-message",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(witResponse),
+      }
+    );
 
     const data = await response.json();
     const restaurants = data.restaurants;
@@ -138,5 +141,5 @@ bot.on("message", async (msg) => {
 });
 
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+  console.log(`Server is running on ${port} port.`);
 });
