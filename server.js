@@ -99,6 +99,14 @@ function findRestaurantsAlongRoute(startCity, endCity) {
 bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
   const message = msg.text;
+  if (message.startsWith("/start")) {
+    // Handle /start command separately
+    bot.sendMessage(
+      chatId,
+      "Welcome to the restaurant finder bot! Please use the provided menu to select a route."
+    );
+    return; // Exit the function to avoid further processing
+  }
 
   try {
     const witResponse = await witClient.message(message);
