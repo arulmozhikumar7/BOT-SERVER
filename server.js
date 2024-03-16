@@ -96,21 +96,15 @@ function findRestaurantsAlongRoute(startCity, endCity) {
   return restaurants;
 }
 
-bot.on("message", async (msg) => {
-  const chatId = msg.chat.id;
-  const message = msg.text;
-  if (message.startsWith("/start")) {
-    // Handle /start command separately
-    bot.sendMessage(
-      chatId,
-      "Welcome to the restaurant finder bot! Please use the provided menu to select a route."
-    );
-    return; // Exit the function to avoid further processing
-  }
+bot.on("callback_query", async (callbackQuery) => {
+  const chatId = callbackQuery.message.chat.id;
+  const messageText = callbackQuery.data; // Get the whole message text
+  console.log("Message:", messageText); // Log the message for debugging
 
   try {
-    const witResponse = await witClient.message(message);
+    const witResponse = await witClient.message(messageText); // Send the message to Wit.ai
 
+    // Extract start and end cities from Wit.ai response
     const startCityEntity = witResponse.entities["start_city:start_city"];
     const endCityEntity = witResponse.entities["end_city:end_city"];
 
@@ -121,30 +115,30 @@ bot.on("message", async (msg) => {
     const startCity = startCityEntity[0].value;
     const endCity = endCityEntity[0].value;
 
-    const response = await fetch(
+    const response = await axios.post(
       "https://bot-server-a9nf.onrender.com/handle-message",
+      witResponse,
       {
-        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(witResponse),
       }
     );
 
-    const data = await response.json();
+    const data = response.data;
     const restaurants = data.restaurants;
 
     const responseMessage = restaurants
       .map((restaurant) => `${restaurant.name} (${restaurant.location})`)
       .join(", ");
+
     bot.sendMessage(
       chatId,
       `Restaurants between ${startCity} and ${endCity}: ${responseMessage}`
     );
   } catch (error) {
     console.error("Error processing message:", error);
-    bot.sendMessage(chatId, "Please Provide a valid route.");
+    bot.sendMessage(chatId, "Please provide a valid route.");
   }
 });
 bot.onText(/\/start/, (msg) => {
@@ -153,8 +147,8 @@ bot.onText(/\/start/, (msg) => {
     reply_markup: {
       inline_keyboard: [
         [
-          { text: "Chennai to Madurai", callback_data: "Chennai_Madurai" },
-          { text: "Madurai to Chennai", callback_data: "Madurai_Chennai" },
+          { text: "Chennai to Madurai", callback_data: "Chennai to Madurai" },
+          { text: "Chennai to Trichy", callback_data: "Chennai to Trichy" },
         ],
         // Add more options here if needed
       ],
