@@ -168,7 +168,7 @@ bot.on("callback_query", async (callbackQuery) => {
   const route = callbackQuery.data.replace("_", " ").split(" to ");
   const startCity = route[0];
   const endCity = route[1];
-
+  console.log(startCity, endCity);
   try {
     const response = await fetch(
       "https://bot-server-a9nf.onrender.com/handle-message",
