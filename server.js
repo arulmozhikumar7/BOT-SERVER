@@ -139,6 +139,60 @@ bot.on("message", async (msg) => {
     bot.sendMessage(chatId, "Please Provide a valid route.");
   }
 });
+bot.onText(/\/start/, (msg) => {
+  const chatId = msg.chat.id;
+  const options = {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: "Chennai to Madurai", callback_data: "Chennai_Madurai" },
+          { text: "Madurai to Chennai", callback_data: "Madurai_Chennai" },
+        ],
+        // Add more options here if needed
+      ],
+    },
+  };
+  bot.sendMessage(chatId, "Please choose a route:", options);
+});
+
+bot.on("callback_query", async (callbackQuery) => {
+  const chatId = callbackQuery.message.chat.id;
+  const route = callbackQuery.data.replace("_", " ").split(" to ");
+  const startCity = route[0];
+  const endCity = route[1];
+
+  try {
+    const response = await fetch(
+      "https://bot-server-a9nf.onrender.com/handle-message",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          entities: {
+            "start_city:start_city": [{ value: startCity }],
+            "end_city:end_city": [{ value: endCity }],
+          },
+        }),
+      }
+    );
+    const data = await response.json();
+    const restaurants = data.restaurants;
+
+    const responseMessage = restaurants
+      .map((restaurant) => `${restaurant.name} (${restaurant.location})`)
+      .join(", ");
+
+    bot.sendMessage(
+      chatId,
+      `Restaurants between ${startCity} and ${endCity}: ${responseMessage}`
+    );
+  } catch (error) {
+    console.error("Error processing message:", error);
+    bot.sendMessage(chatId, "Please provide a valid route.");
+  }
+});
 
 app.listen(port, () => {
   console.log(`Server is running on ${port} port.`);
