@@ -96,65 +96,85 @@ function findRestaurantsAlongRoute(startCity, endCity) {
 
   return restaurants;
 }
-
 bot.on("callback_query", async (callbackQuery) => {
   const chatId = callbackQuery.message.chat.id;
-  const messageText = callbackQuery.data; // Get the whole message text
-  console.log("Message:", messageText); // Log the message for debugging
+  const messageText = callbackQuery.data;
 
   try {
-    const witResponse = await witClient.message(messageText); // Send the message to Wit.ai
-
-    // Extract start and end cities from Wit.ai response
-    const startCityEntity = witResponse.entities["start_city:start_city"];
-    const endCityEntity = witResponse.entities["end_city:end_city"];
-
-    if (!startCityEntity || !endCityEntity) {
-      throw new Error("Start city or end city not found in the message");
-    }
-
-    const startCity = startCityEntity[0].value;
-    const endCity = endCityEntity[0].value;
-
-    const response = await axios.post(
-      "https://bot-server-a9nf.onrender.com/handle-message",
-      witResponse,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    const data = response.data;
-    const restaurants = data.restaurants;
-
-    const responseMessage = restaurants
-      .map((restaurant) => `${restaurant.name} (${restaurant.location})`)
-      .join(", ");
-
-    bot.sendMessage(
-      chatId,
-      `Restaurants between ${startCity} and ${endCity}: ${responseMessage}`
-    );
-    const options = {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: "Select another route",
-              callback_data: "select_another_route",
-            },
+    if (messageText === "select_another_route") {
+      // If "select_another_route" option is selected, send route options again
+      const options = {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "Chennai to Madurai",
+                callback_data: "Chennai to Madurai",
+              },
+              { text: "Chennai to Trichy", callback_data: "Chennai to Trichy" },
+            ],
+            // Add more options here if needed
           ],
-        ],
-      },
-    };
-    bot.sendMessage(chatId, "Select another route:", options);
+        },
+      };
+      bot.sendMessage(chatId, "Please choose another route:", options);
+    } else {
+      // Handle route selection logic here
+      const witResponse = await witClient.message(messageText); // Send the message to Wit.ai
+      // Extract start and end cities from Wit.ai response
+      const startCityEntity = witResponse.entities["start_city:start_city"];
+      const endCityEntity = witResponse.entities["end_city:end_city"];
+
+      if (!startCityEntity || !endCityEntity) {
+        throw new Error("Start city or end city not found in the message");
+      }
+
+      const startCity = startCityEntity[0].value;
+      const endCity = endCityEntity[0].value;
+
+      const response = await axios.post(
+        "https://bot-server-a9nf.onrender.com/handle-message",
+        witResponse,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = response.data;
+      const restaurants = data.restaurants;
+
+      const responseMessage = restaurants
+        .map((restaurant) => `${restaurant.name} (${restaurant.location})`)
+        .join(", ");
+
+      bot.sendMessage(
+        chatId,
+        `Restaurants between ${startCity} and ${endCity}: ${responseMessage}`
+      );
+
+      // Send "Select another route" button after displaying the result
+      const options = {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "Select another route",
+                callback_data: "select_another_route",
+              },
+            ],
+          ],
+        },
+      };
+      bot.sendMessage(chatId, "Select another route:", options);
+    }
   } catch (error) {
     console.error("Error processing message:", error);
     bot.sendMessage(chatId, "Please provide a valid route.");
   }
 });
+
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
   const options = {
