@@ -133,7 +133,7 @@ bot.on("callback_query", async (callbackQuery) => {
       const endCity = endCityEntity[0].value;
 
       const response = await axios.post(
-        "http://localhost:3000/handle-message",
+        "https://bot-server-oha6.onrender.com/handle-message",
         witResponse,
         {
           headers: {
@@ -217,7 +217,7 @@ async function handleTextMessage(chatId, message) {
     const endCity = endCityEntity[0].value;
 
     const response = await axios.post(
-      "http://localhost:3000/handle-message",
+      "https://bot-server-oha6.onrender.com/handle-message",
       witResponse,
       {
         headers: {
