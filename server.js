@@ -133,7 +133,7 @@ bot.on("callback_query", async (callbackQuery) => {
       const endCity = endCityEntity[0].value;
 
       const response = await axios.post(
-        "https://bot-server-a9nf.onrender.com/handle-message",
+        "http://localhost:3000/handle-message",
         witResponse,
         {
           headers: {
@@ -168,6 +168,123 @@ bot.on("callback_query", async (callbackQuery) => {
         },
       };
       bot.sendMessage(chatId, "Select another route:", options);
+    }
+  } catch (error) {
+    console.error("Error processing message:", error);
+    bot.sendMessage(chatId, "Please provide a valid route.");
+  }
+});
+bot.on("message", async (msg) => {
+  const chatId = msg.chat.id;
+  const message = msg.text;
+
+  try {
+    // Check if the message starts with '/'
+    if (message.startsWith("/")) {
+      // Handle command messages
+      handleCommand(chatId, message);
+    } else {
+      // Handle normal text messages
+      handleTextMessage(chatId, message);
+    }
+  } catch (error) {
+    console.error("Error processing message:", error);
+    bot.sendMessage(chatId, "An error occurred while processing your message.");
+  }
+});
+
+// Function to handle command messages
+function handleCommand(chatId, message) {
+  if (message === "/start") {
+    sendRouteOptions(chatId);
+  }
+  // Add more command handling logic if needed
+}
+
+// Function to handle normal text messages
+async function handleTextMessage(chatId, message) {
+  try {
+    const witResponse = await witClient.message(message); // Send the message to Wit.ai
+    // Extract start and end cities from Wit.ai response
+    const startCityEntity = witResponse.entities["start_city:start_city"];
+    const endCityEntity = witResponse.entities["end_city:end_city"];
+
+    if (!startCityEntity || !endCityEntity) {
+      throw new Error("Start city or end city not found in the message");
+    }
+
+    const startCity = startCityEntity[0].value;
+    const endCity = endCityEntity[0].value;
+
+    const response = await axios.post(
+      "http://localhost:3000/handle-message",
+      witResponse,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = response.data;
+    const restaurants = data.restaurants;
+
+    const responseMessage = restaurants
+      .map((restaurant) => `${restaurant.name} (${restaurant.location})`)
+      .join(", ");
+
+    bot.sendMessage(
+      chatId,
+      `Restaurants between ${startCity} and ${endCity}: ${responseMessage}`
+    );
+
+    // Send "Select another route" button after displaying the result
+    const options = {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: "Select another route",
+              callback_data: "select_another_route",
+            },
+          ],
+        ],
+      },
+    };
+    bot.sendMessage(chatId, "Select another route:", options);
+  } catch (error) {
+    console.error("Error processing message:", error);
+    bot.sendMessage(chatId, "Please provide a valid route.");
+  }
+}
+
+// Function to send route options
+function sendRouteOptions(chatId) {
+  const options = {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: "Chennai to Madurai", callback_data: "Chennai to Madurai" },
+          { text: "Chennai to Trichy", callback_data: "Chennai to Trichy" },
+        ],
+        // Add more options here if needed
+      ],
+    },
+  };
+  bot.sendMessage(chatId, "Please choose a route:", options);
+}
+
+// Callback query handler
+bot.on("callback_query", async (callbackQuery) => {
+  const chatId = callbackQuery.message.chat.id;
+  const messageText = callbackQuery.data;
+
+  try {
+    if (messageText === "select_another_route") {
+      sendRouteOptions(chatId);
+    } else {
+      // Handle route selection logic here
+      await handleTextMessage(chatId, messageText);
     }
   } catch (error) {
     console.error("Error processing message:", error);
